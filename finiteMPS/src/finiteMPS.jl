@@ -12,8 +12,11 @@ export getOverlap, getExpValue, singleSiteExpValue, getCoef
 
 
 #include("sturctMPS.jl")
+# function to creat often used finite MPS
 include("initial.jl")
+# fucntion concerning the canonical form of MPS
 include("canForm.jl")
+# functions concerning the transfer matrices constructed from MPS
 include("TransferM.jl")
 include("Heff.jl")
 include("sweepSchemes.jl")
