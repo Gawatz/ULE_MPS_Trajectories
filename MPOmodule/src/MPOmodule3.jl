@@ -161,7 +161,7 @@ struct OpString
 end
 
 #
-# overriding base operators for OpString matrix multiplication 
+# overwriting base operators for OpString matrix multiplication 
 #
 
 # in case either a or b is empty "" creat new string by just combining otherwise add a "→" between them 
