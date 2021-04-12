@@ -1,82 +1,131 @@
-using TensorOperations, KrylovKit, LinearAlgebra
-using MPOmodule2
+#
+#	Transfer Matrix routines
+#
 
 #
-#	apply TM 
+#	To DO: 
+#	- eltype dependent transfer matricies 
 #
-function applyTM_OP(MPS_ket::AbstractArray{<:Number}, MPS_bra::AbstractArray{<:Number}, Op::localOp, 
+
+
+
+"""
+    applyTMop(Mket, Mbra, local_op, x; left = true)
+
+Applies a transfer matrix from the left repectively from the right depending on option left.
+
+!!! ADD DESCRIPTION !!!
+
+# Arguments
+- Mket:
+- Mbra:
+- local_op:
+- x:
+- left: if true applies transfer matrix from the left if false from the right
+
+return:
+
+"""
+function applyTM_OP(Mket::AbstractArray{<:Number}, Mbra::AbstractArray{<:Number}, local_op::localOp, 
 			x::AbstractArray{<:Number}; left::Bool = true)
 	
-	res = zeros(eltype(x), size(MPS_bra)[[1,3][left+1]], size(MPS_ket)[[1,3][left+1]])
-	tmp = zeros(eltype(x), size(x)[2], size(MPS_bra)[[1,3][left+1]])
+	res = zeros(eltype(x), size(Mbra)[[1,3][left+1]], size(Mket)[[1,3][left+1]])
+	tmp = zeros(eltype(x), size(x)[2], size(Mbra)[[1,3][left+1]])
 	if left == true 
-		@inbounds for op in eachoperation(Op)
+		@inbounds for op in eachoperation(local_op)
 
-			c = ComplexF64(op[1])
-			mket = @view MPS_ket[:, op[2], :]	#α_ket, β_ket
-			mbra = @view MPS_bra[:, op[3], :]	#α_bra, β_bra
+			op_coef = ComplexF64(op[1])
+			mket = @view Mket[:, op[2], :]	#α_ket, β_ket
+			mbra = @view Mbra[:, op[3], :]	#α_bra, β_bra
 
-			LinearAlgebra.BLAS.gemm!('T','N', c, x, conj.(mbra), ComplexF64(0.0), tmp)  #α_ket, β_bra
+			LinearAlgebra.BLAS.gemm!('T','N', op_coef, x, conj.(mbra), ComplexF64(0.0), tmp)  #α_ket, β_bra
 			LinearAlgebra.BLAS.gemm!('T', 'N', ComplexF64(1.0), tmp, mket, ComplexF64(1.0), res)
 		end
 
 	else
 		
-		@inbounds for op in eachoperation(Op)
+		@inbounds for op in eachoperation(local_op)
 			
-			c = ComplexF64(op[1])
-			mket = @view MPS_ket[:, op[2], :]	#α_ket, β_ket
-			mbra = @view MPS_bra[:, op[3], :]	#α_bra, β_bra
+			op_coef = ComplexF64(op[1])
+			mket = @view Mket[:, op[2], :]	#α_ket, β_ket
+			mbra = @view Mbra[:, op[3], :]	#α_bra, β_bra
 
-			LinearAlgebra.BLAS.gemm!('T','T', c, x, conj.(mbra), ComplexF64(0.0), tmp)  #β_ket, α_bra
+			LinearAlgebra.BLAS.gemm!('T','T', op_coef, x, conj.(mbra), ComplexF64(0.0), tmp)  #β_ket, α_bra
 			LinearAlgebra.BLAS.gemm!('T', 'T', ComplexF64(1.0), tmp, mket, ComplexF64(1.0), res)
 		end
 
 
 
 	end
+
 	#=
+	#	
 	Op = Array(Op)
 	
 	if left == true
-		@tensor tmp[αket, dbra, βbra] := conj(MPS_bra)[γ, dbra, βbra]*x[γ, αket] #scales with dD³
+		@tensor tmp[αket, dbra, βbra] := conj(MPSbra)[γ, dbra, βbra]*x[γ, αket] #scales with dD³
 		@tensor tmp[αket, dket, βbra] := Op[dket, dbra]*tmp[αket, dbra, βbra] #scales with d²D²
-		@tensor res[βbra, βket] := MPS_ket[αket, dket, βket]*tmp[αket, dket, βbra] #scales with dD³
+		@tensor res[βbra, βket] := MPSket[αket, dket, βket]*tmp[αket, dket, βbra] #scales with dD³
 	else	
-		@tensor tmp[αbra, dbra, βket] := conj(MPS_bra)[αbra, dbra, γ]*x[γ, βket] #scales with dD³		
+		@tensor tmp[αbra, dbra, βket] := conj(MPSbra)[αbra, dbra, γ]*x[γ, βket] #scales with dD³		
                 @tensor tmp[αbra, dket, βket] := Op[dket, dbra]*tmp[αbra, dbra, βket] #scales with d²D²
-                @tensor res[αbra, αket] := MPS_ket[αket, dket, βket]*tmp[αbra, dket, βket] #scales with dD³
+                @tensor res[αbra, αket] := MPSket[αket, dket, βket]*tmp[αbra, dket, βket] #scales with dD³
 
 	end
 	=#
+	
 	return res
 end
 
-function applyTM_OP(MPS_ket::Vector{<:Any}, MPS_bra::Vector{<:Any}, Op_string::NTuple{N,Int}, vecMPO::Vector{MPO}, 
+
+
+"""
+    applyTMop(MPSket, MPSbra, op_string, MPOvec, x; left = true)
+
+Applies a transfer matrix from the left repectively from the right depending on option left.
+
+!!! ADD DESCRIPTION !!!
+
+# Arguments
+- MPSket:
+- MPSbra:
+- op_string:
+- MPOvec:
+- x:
+- left: if true applies transfer matrix from the left if false from the right
+
+return:
+
+"""
+function applyTM_OP(MPSket::Vector{<:Any}, MPSbra::Vector{<:Any}, op_string::NTuple{N,Int}, MPOvec::Vector{MPO}, 
  		  x::AbstractArray{<:Number}; left::Bool = true) where {N}
-	
-	# TODO check that MPS_ket is the same length as MPS_bra and that phys dim match
-	unitCellLength = length(MPS_ket)
+
+	# to do: make these checks obsolet by defining structures for MPS and MPO
+	length(MPSket) == length(MPSbra) || throw(DomainError("MPS ket and bra are not of the same length"))
+	length(MPSket) == length(MPOvec) || throw(DomainError("MPSs and MPO are not of the same length"))
+	N == length(MPOvec) || throw(DomainError("op_string not of the same length as MPOvec"))	
+
+	system_size = length(MPSket)
 
 	if left == true 
-		A = MPS_ket[1]
-        	B = MPS_bra[1]
-		local_op = vecMPO[1][Op_string[1]]
+		A = MPSket[1]
+        	B = MPSbra[1]
+		local_op = MPOvec[1][op_string[1]]
 	else 
-		A = MPS_ket[end]
-		B = MPS_bra[end]
-		local_op = vecMPO[end][Op_string[end]]
+		A = MPSket[end]
+		B = MPSbra[end]
+		local_op = MPOvec[end][op_string[end]]
 	end
 
 
 	res = left == true ? applyTM_OP(A, B, local_op, x; left = true) : applyTM_OP(A, B, local_op, x; left = false)
 
-	# go thorugh unit cell
-	if unitCellLength > 1
+	# go through MPS chain
+	if system_size > 1
 		if left == true
-			res = applyTM_OP(MPS_ket[2:end], MPS_bra[2:end], Op_string[2:end], vecMPO[2:end], res; left = true)
+			res = applyTM_OP(MPSket[2:end], MPSbra[2:end], op_string[2:end], MPOvec[2:end], res; left = true)
 		else
-			res = applyTM_OP(MPS_ket[1:end-1], MPS_bra[1:end-1], Op_string[1:end-1], vecMPO[1:end-1], res; left = false)
+			res = applyTM_OP(MPSket[1:end-1], MPSbra[1:end-1], op_string[1:end-1], MPOvec[1:end-1], res; left = false)
 		end
 	end
 
@@ -84,11 +133,29 @@ function applyTM_OP(MPS_ket::Vector{<:Any}, MPS_bra::Vector{<:Any}, Op_string::N
 	return res # (α_bra , α_ket) 
 end
 
-function applyTM_MPO(MPSket::Vector{<:Any}, MPSbra::Vector{<:Any}, MPOvec::Vector{MPO}, x::Vector{<:Any}; left::Bool = true)
-	MPS_ChainLength = length(MPSket)
+"""
+    applyTM_MPO(MPSket, MPSbra, op_string, MPOvec, x; left = true)
 
-	#check if same length then MPOvec
-	
+Applies a transfer matrix from the left repectively from the right depending on option left.
+
+!!! ADD DESCRIPTION !!!
+
+# Arguments
+- MPSket:
+- MPSbra:
+- MPOvec:
+- x:
+- left: if true applies transfer matrix from the left if false from the right
+
+return:
+
+"""
+function applyTM_MPO(MPSket::Vector{<:Any}, MPSbra::Vector{<:Any}, MPOvec::Vector{MPO}, x::Vector{<:Any}; left::Bool = true)	
+	length(MPSket) == length(MPSbra) || throw(DomainError("MPS ket and bra are not of the same length"))
+	length(MPSket) == length(vecMPO) || throw(DomainError("MPSs and MPO are not of the same length"))
+
+
+	system_size = length(MPSket)
 	A = left == true ? MPSket[1] : MPSket[end]
 	B = left == true ? MPSbra[1] : MPSbra[end]
 	local_MPO = left == true ? MPOvec[1] : MPOvec[end]
@@ -150,7 +217,7 @@ function applyTM_MPO(MPSket::Vector{<:Any}, MPSbra::Vector{<:Any}, MPOvec::Vecto
 
 
 
-	if MPS_ChainLength > 1
+	if system_size > 1
 		if left == true
 			YLa = applyTM_MPO(MPSket[2:end], MPSbra[2:end], MPOvec[2:end], YLa; left = true)
 		else

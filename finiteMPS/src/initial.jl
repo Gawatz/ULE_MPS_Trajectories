@@ -1,4 +1,7 @@
-"""************************ initialization schemes **************************"""
+#
+#	Functions for initial MPS
+#
+
 
 """
     randmps(N, d, maxD)
@@ -73,7 +76,7 @@ return:
 """
 function randombloch(N::Int, maxD::Int)
 		MPSvec = []
-		C = []
+		Cvec = []
 
 		
 		N_half = round(N/2, RoundDown)
@@ -85,14 +88,14 @@ function randombloch(N::Int, maxD::Int)
 			α_dim = 2^(i-1) > maxD ? maxD : Int(2^(i-1))
 			β_dim = 2^i > maxD ? maxD : Int(2^i)
 			
-			A = zeros(ComplexF64,α_dim, 2, β_dim)
+			M = zeros(ComplexF64,α_dim, 2, β_dim)
 			c = zeros(Float64, β_dim, β_dim)
-			A[1,1,1] = cos(θ/2.0)
-			A[1,2,1] = sin(θ/2.0)*exp(1.0im*ϕ)
+			M[1,1,1] = cos(θ/2.0)
+			M[1,2,1] = sin(θ/2.0)*exp(1.0im*ϕ)
 			c[1,1] = 1.0
 			
 			push!(MPSvec, A)
-			push!(C, c)
+			push!(Cvec, c)
 		end
 		
 		if N-2*N_half != 0
@@ -101,14 +104,14 @@ function randombloch(N::Int, maxD::Int)
 			ϕ = rand(Uniform(0.0,2.0*pi))
 			θ = rand(Uniform(0.0,2.0*pi))
 			
-			A = zeros(ComplexF64, bDim, 2, bDim)
+			M = zeros(ComplexF64, bDim, 2, bDim)
 			c = zeros(Float64, bDim, bDim)
-			A[1,1,1] = cos(θ/2.0)
-			A[1,2,1] = sin(θ/2.0)*exp(1.0im*ϕ)
+			M[1,1,1] = cos(θ/2.0)
+			M[1,2,1] = sin(θ/2.0)*exp(1.0im*ϕ)
 			c[1,1] = 1.0
 			
-			push!(MPSvec, A)
-			push!(C, c)
+			push!(MPSvec, M)
+			push!(Cvec, c)
 		end
 		
 		
@@ -120,15 +123,15 @@ function randombloch(N::Int, maxD::Int)
 			ϕ = rand(Uniform(0.0,2.0*pi))
 			θ = rand(Uniform(0.0,2.0*pi))
 			
-			A = zeros(ComplexF64,α_dim, 2, β_dim)
+			M = zeros(ComplexF64,α_dim, 2, β_dim)
 			c = zeros(Float64, β_dim, β_dim)
 			
-			push!(MPSvec, A)
-			push!(C, c)
+			push!(MPSvec, M)
+			push!(Cvec, c)
 		
 		end
 
-		return MPSvec, C
+		return MPSvec, Cvec
  end
 """
     coeftomps(N, Coef)
@@ -136,22 +139,27 @@ function randombloch(N::Int, maxD::Int)
 
 # Arguments
 - N: system size
-- Coef: Coefficient vector 
+- coef: Coefficient vector 
 
 return:
 	- MPSvec: vector storing local matrices M[i] for each site i
 """
-function coeftomps(N::Int, Coef::Vector{<:Number})
-	MPSvec = []
+function coeftomps(N::Int, d::Int, coef::Vector{<:Number})
+	tmp = zeros(ComplexF64, 1,size(coef)[1])
+	tmp[1,:] = coef
 	
-	tmp = zeros(ComplexF64, 1,size(Coef)[1])
-	tmp[1,:] = Coef
+	size(tmp)[2] == d^N || throw(DomainError("coefficient vector of size $(size(tmp)[2]) 
+						 does not match with the stated system size N=$(N) and
+						 physical dimension d=$(d)"))
+
+
+	MPSvec = []
 	for site in 1:N 
 		
 		bout_pre, d_left = size(tmp)
-		tmp =  reshape(tmp, bout_pre *2, Int(d_left/2))
+		tmp =  reshape(tmp, bout_pre *d, Int(d_left/d))
 		F = svd(tmp)
-		mps = reshape(F.U, bout_pre, 2, size(F.U)[2])
+		mps = reshape(F.U, bout_pre, d, size(F.U)[2])
 
 		tmp = diagm(0=>F.S)*F.V'
 

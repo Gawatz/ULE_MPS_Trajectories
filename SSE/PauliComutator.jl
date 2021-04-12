@@ -5,7 +5,6 @@ using LinearAlgebra
 #
 #	many particle pauli matrices for operator decomposition
 #
-#=
 function get_Sz(N::Int, site::Int)
 	# Important convention we start chain with site : 1 ..... and end with site N
 	site = site - 1 # so site 1 corresponds to a bitshift of 0  
@@ -16,9 +15,9 @@ function get_Sz(N::Int, site::Int)
 	vec = vec_nidx.>>site  # shift bit by site to the left so if there was a 1 at site: 
 			 	# site in orginal it would be at leading bit now.
 	
-	vec = Vector{Int}(-1 .*(2 .*(vec.%2).-1)) # check if there is a 1 at bit at site: site it is now at the leading bit
+	vec = Vector{Int}(-1 .*(2 .*(vec.%2).-1)) # check if there is a 1 at bit at site: site it is now at the leading bit.
 	 				    # we can check if vec entries are now odd or not .. if odd the bit at site :site was 
-					    # previously 1 otherwise it was 0 ---> for 1 assigne +1 for 0 assigne -1
+					    # previously 1 otherwise it was 0 ---> for 1 assigne +1 for 0 assigne -1.
 
 
 	#vec = Vector{Int}(1 .*(2 .*(vec.%2).-1)) # check if there is a 1 at bit at site: site it is now at the leading bit
@@ -65,7 +64,8 @@ function get_Sx(N::Int, site::Int)
 
 	return sparse(vec_nidx.+1, vec_applied.+1, vec_data)
 end
-=#
+
+
 function getPauliCoef(Op::AbstractArray{<:Number,2}, pauli_combi, sites)
 	N = Int(log(size(Op)[1])/log(2))
 	n_qbits =  size([Tuple(pauli_combi)...])[1]
@@ -90,15 +90,10 @@ function getPauliCoef(Op::AbstractArray{<:Number,2}, pauli_combi, sites)
 
 	end
 
-	#@show pauli_string
 	coef = tr(pauli_string*Op)/Int(2^N)
 
-	#@show coef
-	#println("\n")
-	
 	return coef
 end
-
 
 
 
@@ -107,9 +102,9 @@ end
 #
 
 struct pauliString
-	N::Int 
-	sites::Vector{Int}
-	baseIdx::Vector{Int}
+	N::Int  # length 
+	sites::Vector{Int} # vector which contains site indicator where the string has non-trivial operators 
+	baseIdx::Vector{Int} # indicates the operator (σx, σy, σz)
 	coef::Base.RefValue{ComplexF64}
 end
 
@@ -128,9 +123,8 @@ import Base.conj
 (+)(a::pauliString, b::pauliString) = a == b ? pauliString(a.N, a.sites, a.baseIdx, coef(a)+coef(b)) : [a,b]
 (*)(a::pauliString, c::Number) = pauliString(a.N, a.sites, a.baseIdx, coef(a)*c)
 (*)(c::Number, a::pauliString) = pauliString(a.N, a.sites, a.baseIdx, coef(a)*c)
-function (*)(a::pauliString, b::pauliString)
-	""" has not been tested yet !!!"""
 
+function (*)(a::pauliString, b::pauliString)
 
 	p1_sites = a.sites
 	p2_sites = b.sites

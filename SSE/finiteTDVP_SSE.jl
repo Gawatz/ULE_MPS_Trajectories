@@ -58,7 +58,6 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 		#
 		# evolve A_site forward in time
 		#
-		
 		localMPO = MPOvec[site]
 		Renv = RBlocks[end-(site-1)]
 		Lenv = LBlocks[site]
@@ -76,7 +75,6 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 		#
 		# split A_new_site and left can it
 		#
-		
 		ALnew, S, Vdagger = leftCanSite(ACnew; optSVD = true)
 		S = S./sign(S[1,1])	
 		S = S./(sqrt(sum(S.^2))) #normalize S
@@ -98,10 +96,8 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 	
 		Cpre = simple_taylor(Hceff, C, 0.5*dτ, order)
 		#Cpre, info = exponentiate(x->Hceff(x), 0.5*dτ, C; ishermitian = false, tol = 1e-14)
-		#Cpre, info = exponentiate(x->Hceff(x), 0.5*dτ, C; ishermitian = true, tol = 1e-14)
 			
 	end
-	#@show "at N-1"
 	#
 	#	evolve site N
 	#
@@ -119,14 +115,11 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 	RBlocks = [Renv]
 
 
-	#@show "at N"
 	#
 	#	evolve back 
 	#
 	Cvec = []
 	for site in length(MPSvec):-1:2
-		
-		#here MPS hast to be reshaped 
 		
 		AR, S, U = rightCanSite(MPSvec[site];optSVD=true)
 		MPSvec[site] = AR
@@ -149,7 +142,6 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 		Lenv = LBlocks[site]
 		Hceff(x) = applyHCeff(x, Lenv, Renv)
 		#Cnext, info = exponentiate(Hceff, 0.5*dτ, C; ishermitian = false, tol = 10e-16)
-		#Cnext, info = exponentiate(Hceff, 0.5*dτ, C; ishermitian = true, tol = 10e-16)
 		Cnext = simple_taylor(Hceff, C, 0.5*dτ, order)	
 
 		#
@@ -163,7 +155,6 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 		
 
 		#ACnew, info = exponentiate(Heff, -0.5*dτ, v_0; ishermitian = false, tol=10e-16, verbosity = 0, maxiter = 20)
-		#ACnew, info = exponentiate(Heff, -0.5*dτ, v_0; ishermitian = true, tol=10e-16, verbosity = 0, maxiter = 20)
 		ACnew = simple_taylor(Heff, v_0, -0.5*dτ, order)
 		
 		MPSvec[site-1] = ACnew 
@@ -177,31 +168,10 @@ function evo_sweep_TDVP(MPSvec::Vector{<:Any}, Cpre::AbstractArray{<:Number}, MP
 	snorm = sqrt(sum(S.^2))
 	S = S./snorm
 	Cpre = U*S
-	#@show sum(taylor_t)
-	#@show sum(env_t)
+	
 	return Cpre, RBlocks, Cvec[end:-1:1]
 end
 
-
-function single_site_expValue(M::Vector{<:Any}, C::Vector{<:Any}, Op::AbstractArray{<:Number}, site::Int; can_left=true)	
-	println("site ",site)
-	println(size(C[site]))
-	println(size(M[site]))
-
-
-	if can_left
-		@tensor tmp[β_ket,α_ket,d] := C[site][γ, β_ket] * M[site][α_ket, d, γ]
-	else
-		pre_site = site-1 == 0 ? size(M)[1] : site-1
-		@tensor tmp[β_ket,α_ket,d] := C[pre_site][α_ket, γ] * M[site][γ, d, β_ket]
-	end
-
-	@tensor tmp[d_ket,d_bra] := tmp[β,α,d_ket] * conj(tmp[β,α,d_bra])  
-	@tensor expValue[] := Op[d_bra,d_ket] * tmp[d_ket,d_bra] 
-	
-	#expVlaue = 2.0
-	return expValue
-end
 
 function get1RDM(MPSvec::Vector{<:Any})
 
@@ -251,11 +221,13 @@ function loadMPS_SSE(name)
 	
 end
 
+#=
 function get_dτ(A::MPS_SSE, Decay_sum::Vector{MPO})	
 	Γ_act = opnorm(creatOp_from_MPO(Decay_sum)[:,1,1,:])   # how do I change this for large systems 
 	dτ = A.n_rel/Γ_act
 	return dτ
 end
+=#
 
 function get_Heff(A::MPS_SSE; depara = false)	
 	H_MPO = A.H_MPO
@@ -269,6 +241,9 @@ function get_Heff(A::MPS_SSE; depara = false)
 	
 	if depara == true
 		# deparallize mpo
+		# add further MPO comperssion methods
+		@show "Not implemented"
+		continue
 	end
 
 
@@ -331,8 +306,6 @@ function get_measurements(MPSvec::Vector{<:Any}, C::Vector{<:Any}, T::Float64, m
 	return measure_results
 end
 
-
-
 function evo_TDVP_SSE(MPS_SSE::MPS_SSE; MPOvec::Union{Nothing, Vector{MPO}} = nothing, dτ::Union{Number,Nothing} = nothing, name = nothing, saveState = false)
 	
 	
@@ -377,11 +350,7 @@ function evo_TDVP_SSE(MPS_SSE::MPS_SSE; MPOvec::Union{Nothing, Vector{MPO}} = no
 		push!(RBlocks, Renv)#[init,N,.....,2]
 	end
 
-	#=
-	Lenv = [Array{ComplexF64,2}(I,1,1)]
-	energy = applyTM_MPO(MPSvec[1:end], MPOvec[1:end], Lenv; left = false)
-	@show energy
-	=#
+
 
 	@show Tmax
 	T = Tinit
@@ -459,22 +428,8 @@ function evo_TDVP_SSE(MPS_SSE::MPS_SSE; MPOvec::Union{Nothing, Vector{MPO}} = no
 			#measure_results = get_measurements(deepcopy(MPSvec), pushfirst!(Cvec,Cpre), T, MPS_SSE.measureDict)
 			
 			
-			Renv = [Array{ComplexF64,2}(I,1,1)]
-			NP_MPO = measureDict["Np"]
-			NP = applyTM_MPO(MPSvec, NP_MPO, Renv; left = false)
-			@show NP
-			#=
-			MPSvec = iter_applyMPO(MPSvec, Jump_MPO, maxDim; Niter = 1)	
-			
-			Renv = [Array{ComplexF64,2}(I,1,1)]
-			NP_MPO = measureDict["Np"]
-			NP = applyTM_MPO(MPSvec, NP_MPO, Renv; left = false)
-			@show NP
-			=#
-			
-			
-			
-			#MPSvec = iter_applyMPO(preMPS, Jump_MPO, maxDim; Niter = 1)	
+			#MPSvec = iter_applyMPO(MPSvec, Jump_MPO, maxDim; Niter = 1)		
+			MPSvec = iter_applyMPO(preMPS, Jump_MPO, maxDim; Niter = 1)	
 			
 			#
 			#	variational truncation 
@@ -532,7 +487,7 @@ function evo_TDVP_SSE(MPS_SSE::MPS_SSE; MPOvec::Union{Nothing, Vector{MPO}} = no
 			
 			#
 			#	you have to build a new right block
-			#	bcs. bond dimensions changed
+			#	bcs. MPS has changed from jump
 			#
 			Renv = [Array{ComplexF64,2}(I,1,1)]
 			RBlocks = [Renv]
@@ -577,28 +532,9 @@ function evo_TDVP_SSE(MPS_SSE::MPS_SSE; MPOvec::Union{Nothing, Vector{MPO}} = no
 			end
 		end
 	
-		#=
-
-		if progress_channel != nothing
-			take!(progress_channel[myid()])
-			put!(progress_channel[myid()], Tmax/T)
-
-			if myid() == 1
-				if isready.(progress_channel)
-					print("\e[2K")
-					print("\e[1G")
-					z = fetch.(progress_channel)
-					print(z)
-				
-				end
-			end
-		end
-		=#
-		#@show "time for one step" time()-tstart
 	end
 	
 	
-	#@show Tmax
 	rightCanMPS(MPSvec)
 	name_inter_state = string(dir_name,"/inter_states/inter_state_id$(id).jld")
 	save(name_inter_state, "time", T, "MPSvec", MPSvec)

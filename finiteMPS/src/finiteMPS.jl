@@ -1,7 +1,9 @@
 module finiteMPS
 
 using LinearAlgebra
-
+using TensorOperations
+using KrylovKit
+using MPOmodule2
 
 export randMPS
 export rightCanMPS, leftCanMPS, leftCanSite, rightCanSite, mixedCanMPS
@@ -10,6 +12,11 @@ export applyHeff, applyHCeff
 export evo_sweep, vmps_sweep, iter_applyMPO, evo_sweep_2Site
 export getOverlap, getExpValue, singleSiteExpValue, getCoef
 
+
+
+# To DO:
+#	- MPS struct : depending on physical dimension and system size and eltype 
+#	
 
 #include("sturctMPS.jl")
 # function to creat often used finite MPS

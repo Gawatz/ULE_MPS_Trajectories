@@ -1,25 +1,35 @@
-using TensorOperations
-
 #
 #	Can forms
 #
 
 """
-    leftCanSite(M; optSVD = false)
+    leftCanSite(M; opt_svd = false)
 
-brings M into left canonical form. Either by QR-decomposition or iff optSVD = true
-bs signular-value decomposition
+Brings M into left canonical form, either by a QR-decomposition or if 
+opt_svd = true by signular-value decomposition.
 
 # Arguments
-- 
+- M: local matrix in MPS representation.
+- opt_svd: option to either use qr decomposition (false) or svd (true) 
 
+
+return:
+	opt_svd = true:
+	
+	- AL
+	- S
+
+	opt_svd = false:
+
+	- AL
+	- R
 
 """
-function leftCanSite(M::AbstractArray{<:Number}; optSVD = false)	
+function leftCanSite(M::AbstractArray{<:Number}; opt_svd = false)	
 	α_dim, d_dim, β_dim = size(M)
 	M = reshape(M, *(size(M)[1:2]...), size(M)[3])
 	
-	if optSVD == true
+	if opt_svd == true
 		U,S,V = svd(M)
 		AL = reshape(U, α_dim, d_dim, size(S)[1])
 		
@@ -36,10 +46,12 @@ function leftCanSite(M::AbstractArray{<:Number}; optSVD = false)
 end
 
 
+
 """
     leftCanMPS(MPSvec; Cpre = nothing)
 
-takes Cpre and brings the MPS chain Cpre - M.... M - stored in Mvec into left-canonical form.
+takes Cpre and brings the MPS chain Cpre - M.... M - stored in Mvec into 
+left-canonical form.
 
 # Arguments
 - MPSvec: Vector cotaining the M's of the MPS which have to be transformed into the left-canonical form
@@ -50,10 +62,12 @@ return:
 	Cnext, Remainder, Cvec
 
 
-	perfoms SVD on last site so M = U, S, V were the last M in left can. form is formed from U
-	S is returned as Cnext, and the V is returned as the Remainder.
-	For all intermidiate steps S of the svd decomposition has been added to a vector Cvec.
-	Note the last Cnext has not been added to Cvec by default! (Cvec just contains all intermidiate Cpre of each A) 
+	perfoms SVD on last site so M = U, S, V were the last M in left can. 
+	form is formed from U S is returned as Cnext, and the V is returned as 
+	the Remainder. For all intermidiate steps S of the svd decomposition 
+	has been added to a vector Cvec. Note the last Cnext has not been 
+	added to Cvec by default! (Cvec just contains all intermidiate Cpre of
+	each A) 
 
 
 """
@@ -80,22 +94,35 @@ function leftCanMPS(MPSvec::SubArray{<:Any}; Cpre::Union{AbstractArray{<:Number}
 end
 
 
-"""
-    leftCanSite(M; optSVD = false)
 
-brings M into left canonical form. Either by QR-decomposition or iff optSVD = true
-bs signular-value decomposition
+"""
+    rightCanSite(M; opt_svd = false)
+
+Brings M into left canonical form, either by a QR-decomposition or if opt_svd = true
+by signular-value decomposition.
 
 # Arguments
-- 
+- M: local matrix in MPS representation.
+- opt_svd: option to either use qr decomposition (false) or svd (true) 
 
+
+return:
+	opt_svd = true:
+	
+	- AL
+	- S
+
+	opt_svd = false:
+
+	- AL
+	- R
 
 """
-function rightCanSite(M::AbstractArray{<:Number}; optSVD = false)
+function rightCanSite(M::AbstractArray{<:Number}; opt_svd = false)
 	α_dim, d_dim, β_dim = size(M)
 	M = reshape(M, size(M)[1], *(size(M)[2:3]...))
 	
-	if optSVD == true
+	if opt_svd == true
 		U, S, V = svd(M)
 		AR = reshape(V', size(S)[1], d_dim, β_dim)
 		
@@ -114,14 +141,25 @@ function rightCanSite(M::AbstractArray{<:Number}; optSVD = false)
 end
 
 
-"""
-    leftCanSite(M; optSVD = false)
 
-brings M into left canonical form. Either by QR-decomposition or iff optSVD = true
-bs signular-value decomposition
+"""
+    rightsCanMPS(MPSvec; Cpre = nothing)
+
+takes Cpre and brings the MPS chain Cpre - M.... M - stored in Mvec into left-canonical form.
 
 # Arguments
-- 
+- MPSvec: Vector cotaining the M's of the MPS which have to be transformed into the left-canonical form
+- Cpre: singular values which come before the first element in MPSvec
+
+
+return:
+	Cnext, Remainder, Cvec
+
+
+	perfoms SVD on last site so M = U, S, V were the last M in left can. form is formed from U
+	S is returned as Cnext, and the V is returned as the Remainder.
+	For all intermidiate steps S of the svd decomposition has been added to a vector Cvec.
+	Note the last Cnext has not been added to Cvec by default! (Cvec just contains all intermidiate Cpre of each A) 
 
 
 """
@@ -150,6 +188,8 @@ function rightCanMPS(MPSvec::SubArray{<:Any}; Cnext::Union{AbstractArray{<:Numbe
 	#push!(Cvec, Cpre)
 	return Cpre, Remainder, Cvec[end:-1:1]
 end
+
+
 
 rightCanMPS(MPSvec::Vector{<:Any}; Cnext::Union{AbstractArray{<:Number}, Nothing} = nothing, 
 	    from::Int = 1, to::Int = size(MPSvec)[1]) = rightCanMPS(@view MPSvec[from:to]; Cnext = Cnext)
@@ -213,10 +253,8 @@ function getSchmidtVec(MPSvec::Vector{<:Any}, site::Int)
 	rightHalf = @view MPSvec[site+1:end]
 
 	Svec_left = mergeMPS(leftHalf) #(phys_dim, ingoing, outgoing)
-	@show size(Svec_left)
 	Svec_left = Svec_left[:,1,:]
 	Svec_right = mergeMPS(rightHalf)
-	@show size(Svec_right)
 	Svec_right = Svec_right[:,:,1]
 
 	return S, Svec_left, Svec_right
