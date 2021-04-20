@@ -6,7 +6,6 @@ using MPOmodule2
 using finiteMPS
 using JLD
 
-include("dePara.jl")
 ############################################################################
 #
 #	TDVP functions
@@ -174,7 +173,6 @@ end
 
 
 function get1RDM(MPSvec::Vector{<:Any})
-
 	γ = zeros(ComplexF64, length(MPSvec), length(MPSvec))
 	for i in 1:length(MPSvec)
 	 	for j in i:length(MPSvec)
@@ -221,15 +219,13 @@ function loadMPS_SSE(name)
 	
 end
 
-#=
 function get_dτ(A::MPS_SSE, Decay_sum::Vector{MPO})	
 	Γ_act = opnorm(creatOp_from_MPO(Decay_sum)[:,1,1,:])   # how do I change this for large systems 
 	dτ = A.n_rel/Γ_act
 	return dτ
 end
-=#
 
-function get_Heff(A::MPS_SSE; depara = false)	
+function get_Heff(A::MPS_SSE; depara_opt = false)	
 	H_MPO = A.H_MPO
 	Decay_MPO = A.Decay_MPO
 	
@@ -239,11 +235,10 @@ function get_Heff(A::MPS_SSE; depara = false)
 		Heff = Heff + (-0.5im*decay_mpo)
 	end
 	
-	if depara == true
+	if depara_opt == true
 		# deparallize mpo
 		# add further MPO comperssion methods
-		@show "Not implemented"
-		continue
+		println("not implemented")
 	end
 
 

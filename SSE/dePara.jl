@@ -1,6 +1,5 @@
 using MPOmodule2
-include("PauliComutator.jl")
-
+using PauliStrings
 #
 #	checks if two rows or columns of a mpo are
 #	parallel to each other
