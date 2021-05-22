@@ -105,9 +105,6 @@ end
 #
 #
 include("MPOcollection.jl")
-#include("PauliComutator.jl")
-#include("decomposeJump.jl")
-#include("dePara.jl")
 
 #
 #	sys size
