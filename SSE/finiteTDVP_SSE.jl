@@ -2,7 +2,7 @@ using Distributed
 using TensorOperations, KrylovKit, LinearAlgebra
 using Combinatorics
 using Base.Threads
-using MPOmodule2
+using MPOmodule
 using finiteMPS
 using JLD
 

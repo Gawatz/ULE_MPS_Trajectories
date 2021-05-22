@@ -1,5 +1,5 @@
 using LinearAlgebra
-using MPOmodule2
+using MPOmodule
 
 
 sz = Array{ComplexF64}([1.0 0.0; 0.0 -1.0])

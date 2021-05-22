@@ -2,7 +2,7 @@ using Distributed
 using exactQmodule
 using Arpack
 using PauliStrings
-using MPOmodule2
+using MPOmodule
 using finiteMPS
 using FFTW
 #@everywhere using ProgressMeter
