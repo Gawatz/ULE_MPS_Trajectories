@@ -79,7 +79,7 @@ try
 	mkdir(dir_name)
 	mkdir(string(dir_name,"/inter_states"))
 catch
-	println(string("director ",dir_name," already exists."))
+	println(string("directory",dir_name," already exists."))
 end
 
 @everywhere global f = open("error_message.txt", "w+")
