@@ -120,7 +120,7 @@ Temp = 2.0
 
 """**************************** get Jump Operator  *********************************"""
 #
-#	get Ham as pauli string (we will deal with the problem as hardcore bosons!) 
+#	get Ham as pauli string
 #
 HRM = Vector{PauliString}([])
 for site in 1:N-1 # just has to be build up to order
