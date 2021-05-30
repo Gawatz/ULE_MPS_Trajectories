@@ -86,10 +86,8 @@ function getJump_from_Comutator(a::Vector{PauliString}, H, G_time, time_vec, ord
 	for n in 0:order
 		#  ((-1i)ⁿ/n!) * ∫g(t)⋅tⁿ dt 
 		c =(2*pi)^(n+1)*sum(flip_sign.(time_vec).*G_time.*(time_vec.^n).*dt)*(((-1im)^n)/factorial(n))
-		# overall 2*pi + 2*pi for freq. convertion 
 
-		#c = 1.0
-		@show c  # c should be all real but somehow I still get imaginary parts .... :/ 
+		@show c #just for sanity check to see if real
 		push!(L, [PauliString(x.N, x.sites, x.baseIdx, coef(x)*c) 
 			  for x in pauli_string]...)
 		pauli_string = simplify_stringList(vcat([adH(H,p,1) for p in pauli_string]...))
